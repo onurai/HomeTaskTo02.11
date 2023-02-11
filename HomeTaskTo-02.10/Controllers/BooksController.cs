@@ -1,4 +1,5 @@
 ﻿using HomeTaskTo_02._10.Models;
+using HomeTaskTo_02._10.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,49 +9,46 @@ namespace HomeTaskTo_02._10.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private static List<Book> _books = new List<Book>();
+        private readonly IBookService _bookService;
 
-        [HttpGet("Book/book/get")]
-        public List<Book> Get()
+        public BooksController(IBookService bookService)
         {
-            return _books;
+            _bookService = bookService;
         }
-        [HttpGet("Book/book/{book.id}")]
+
+        [HttpGet("get")]
+        public IActionResult GetAll()
+        {
+            var result = _bookService.GetAll();
+            return Ok(result); 
+        }
+
+        [HttpGet("{id}")]
         public IActionResult Get(string id)
         {
-            var existingBook = _books.FirstOrDefault(x => x.Id == id);
-            if (existingBook == null)
-            {
-                return NotFound("book was not found");
-            }
-            return Ok(existingBook);
+            var existedBook = _bookService.Get(id);
+            return (existedBook == null) ? NotFound("Book was not found") : Ok(existedBook);    
         }
 
-        [HttpPost("book/create")]
+        [HttpPost("create")]
         public IActionResult CreateBook(Book book)
         {
-            if (book == null)
-            {
-                return NotFound("book info is null");
-            }
-            _books.Add(book);
-            return Ok(book);
-        }
-        [HttpPut("Book/book/{id}")]
-        public void UpdateBook(string id, Book book)
-        {
-            var existingBook = _books.FirstOrDefault(x => x.Id == id);
-            existingBook.BookName = book.BookName;
-            existingBook.Price = book.Price;
-            existingBook.Category = book.Category;
-            existingBook.Author = book.Author;
+            var isSuccessfullyCreated  = _bookService.Create(book);
+            return isSuccessfullyCreated ? Ok(book) : NotFound("Book was not created");
         }
 
-        [HttpDelete("Book/book/{id}")]
-        public void RemoveBook(string id)
+        [HttpPut("{id}")]
+        public IActionResult UpdateBook(string id, Book book)
         {
-            var existingBook = _books.FirstOrDefault(x => x.Id == id);
-            _books.Remove(existingBook);
+            var isSuccessfullyUpdated = _bookService.Update(id, book);
+            return isSuccessfullyUpdated ? Ok(book) : NotFound("book was not found, update was unsuccessful");
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult RemoveBook(string id)
+        {
+            var isSuccessfullyDeleted = _bookService.Remove(id);
+            return isSuccessfullyDeleted ? Ok() : NotFound("book was not found, update was unsuccessful");
         }
 
 
